@@ -1776,39 +1776,59 @@ public class PersistentTopicsBase extends AdminResource {
                 }));
     }
 
-    protected void internalSkipMessages(String subName, int numMessages, boolean authoritative) {
+    protected void internalSkipMessages(AsyncResponse asyncResponse, String subName,
+                                        int numMessages, boolean authoritative) {
+        CompletableFuture<Void> future;
         if (topicName.isGlobal()) {
-            validateGlobalNamespaceOwnership(namespaceName);
+            future = validateGlobalNamespaceOwnershipAsync(namespaceName);
+        } else {
+            future = CompletableFuture.completedFuture(null);
         }
-        PartitionedTopicMetadata partitionMetadata = getPartitionedTopicMetadata(topicName,
-                authoritative, false);
-        if (partitionMetadata.partitions > 0) {
-            throw new RestException(Status.METHOD_NOT_ALLOWED, "Skip messages on a partitioned topic is not allowed");
-        }
-
-        validateTopicOwnership(topicName, authoritative);
-        validateTopicOperation(topicName, TopicOperation.SKIP);
-
-        PersistentTopic topic = (PersistentTopic) getTopicReference(topicName);
-        try {
-            if (subName.startsWith(topic.getReplicatorPrefix())) {
-                String remoteCluster = PersistentReplicator.getRemoteCluster(subName);
-                PersistentReplicator repl = (PersistentReplicator) topic.getPersistentReplicator(remoteCluster);
-                checkNotNull(repl);
-                repl.skipMessages(numMessages).get();
-            } else {
-                PersistentSubscription sub = topic.getSubscription(subName);
-                checkNotNull(sub);
-                sub.skipMessages(numMessages).get();
-            }
-            log.info("[{}] Skipped {} messages on {} {}", clientAppId(), numMessages, topicName, subName);
-        } catch (NullPointerException npe) {
-            throw new RestException(Status.NOT_FOUND, "Subscription not found");
-        } catch (Exception exception) {
-            log.error("[{}] Failed to skip {} messages {} {}", clientAppId(), numMessages, topicName, subName,
-                    exception);
-            throw new RestException(exception);
-        }
+        future.thenCompose(__ -> getPartitionedTopicMetadataAsync(topicName, authoritative, false))
+                .thenCompose(partitionMetadata -> {
+                    if (partitionMetadata.partitions > 0) {
+                        throw new RestException(Status.METHOD_NOT_ALLOWED,
+                                "Skip messages on a partitioned topic is not allowed");
+                    }
+                    return null;
+                })
+                .thenCompose(__ -> validateTopicOwnershipAsync(topicName, authoritative))
+                .thenCompose(__ -> validateTopicOperationAsync(topicName, TopicOperation.SKIP))
+                .thenCompose(__ -> getTopicReferenceAsync(topicName))
+                .thenAccept(topic -> {
+                    CompletableFuture<Void> skipMessageFuture;
+                    if (subName.startsWith(((PersistentTopic) topic).getReplicatorPrefix())) {
+                        String remoteCluster = PersistentReplicator.getRemoteCluster(subName);
+                        PersistentReplicator repl = (PersistentReplicator)
+                                ((PersistentTopic) topic).getPersistentReplicator(remoteCluster);
+                        checkNotNull(repl);
+                        skipMessageFuture = repl.skipMessages(numMessages);
+                    } else {
+                        PersistentSubscription sub = ((PersistentTopic) topic).getSubscription(subName);
+                        checkNotNull(sub);
+                        skipMessageFuture = sub.skipMessages(numMessages);
+                    }
+                    skipMessageFuture.thenAccept(__ -> {
+                        asyncResponse.resume(Response.noContent().build());
+                        log.info("[{}] Skipped {} messages on {} {}", clientAppId(), numMessages, topicName, subName);
+                    }).exceptionally(ex -> {
+                        Throwable cause = FutureUtil.unwrapCompletionException(ex);
+                        if (cause instanceof NullPointerException) {
+                            asyncResponse.resume(new RestException(Status.NOT_FOUND, "Subscription not found"));
+                        } else {
+                            log.error("[{}] Failed to skip {} messages {} {}",
+                                    clientAppId(), numMessages, topicName, subName, ex);
+                            asyncResponse.resume(new RestException(cause));
+                        }
+                        return null;
+                    });
+                }).exceptionally(ex -> {
+                    Throwable cause = FutureUtil.unwrapCompletionException(ex);
+                    log.error("[{}] Failed to skip messages for subscription {} on topic {}",
+                            clientAppId(), subName, topicName, cause);
+                    resumeAsyncResponseExceptionally(asyncResponse, cause);
+                    return null;
+                });
     }
 
     protected void internalExpireMessagesForAllSubscriptions(AsyncResponse asyncResponse, int expireTimeInSeconds,
