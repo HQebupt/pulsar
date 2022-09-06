@@ -1696,10 +1696,29 @@ public class ServerCnx extends PulsarHandler implements TransportCnx {
         boolean consumerCreated = consumerFuture != null
                 && consumerFuture.isDone() && !consumerFuture.isCompletedExceptionally();
 
+        final long consumerEpoch;
+        if (seek.hasConsumerEpoch()) {
+            consumerEpoch = seek.getConsumerEpoch();
+        } else {
+            consumerEpoch = DEFAULT_CONSUMER_EPOCH;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] seek from consumer {}, consumerEpoch {}", remoteAddress, seek.getConsumerId(),
+                    consumerEpoch);
+        }
+
         if (consumerCreated && seek.hasMessageId()) {
             Consumer consumer = consumerFuture.getNow(null);
             Subscription subscription = consumer.getSubscription();
             MessageIdData msgIdData = seek.getMessageId();
+
+            if (consumerEpoch > consumer.getConsumerEpoch()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}-{}] Update epoch, old epoch [{}], new epoch [{}]",
+                            subscription.getName(), consumer, consumer.getConsumerEpoch(), consumerEpoch);
+                }
+                consumer.setConsumerEpoch(consumerEpoch);
+            }
 
             long[] ackSet = null;
             if (msgIdData.getAckSetsCount() > 0) {
@@ -1728,6 +1747,14 @@ public class ServerCnx extends PulsarHandler implements TransportCnx {
             Consumer consumer = consumerFuture.getNow(null);
             Subscription subscription = consumer.getSubscription();
             long timestamp = seek.getMessagePublishTime();
+
+            if (consumerEpoch > consumer.getConsumerEpoch()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}-{}] Update epoch, old epoch [{}], new epoch [{}]",
+                            subscription.getName(), consumer, consumer.getConsumerEpoch(), consumerEpoch);
+                }
+                consumer.setConsumerEpoch(consumerEpoch);
+            }
 
             subscription.resetCursor(timestamp).thenRun(() -> {
                 log.info("[{}] [{}][{}] Reset subscription to publish time {}", remoteAddress,

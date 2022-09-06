@@ -2203,8 +2203,9 @@ public class ConsumerImpl<T> extends ConsumerBase<T> implements ConnectionHandle
         String seekBy = String.format("the timestamp %d", timestamp);
         return seekAsyncCheckState(seekBy).orElseGet(() -> {
             long requestId = client.newRequestId();
-            return seekAsyncInternal(requestId, Commands.newSeek(consumerId, requestId, timestamp),
-                MessageId.earliest, seekBy);
+            return seekAsyncInternal(requestId,
+                    Commands.newSeek(consumerId, requestId, timestamp, CONSUMER_EPOCH.incrementAndGet(this)),
+                    MessageId.earliest, seekBy);
         });
     }
 
@@ -2223,14 +2224,16 @@ public class ConsumerImpl<T> extends ConsumerBase<T> implements ConnectionHandle
                 long[] ackSetArr = ackSet.toLongArray();
                 ackSet.recycle();
 
-                seek = Commands.newSeek(consumerId, requestId, msgId.getLedgerId(), msgId.getEntryId(), ackSetArr);
+                seek = Commands.newSeek(consumerId, requestId, msgId.getLedgerId(), msgId.getEntryId(), ackSetArr,
+                        CONSUMER_EPOCH.incrementAndGet(this));
             } else if (messageId instanceof ChunkMessageIdImpl) {
                 ChunkMessageIdImpl msgId = (ChunkMessageIdImpl) messageId;
                 seek = Commands.newSeek(consumerId, requestId, msgId.getFirstChunkMessageId().getLedgerId(),
-                        msgId.getFirstChunkMessageId().getEntryId(), new long[0]);
+                        msgId.getFirstChunkMessageId().getEntryId(), new long[0], CONSUMER_EPOCH.incrementAndGet(this));
             } else {
                 MessageIdImpl msgId = (MessageIdImpl) messageId;
-                seek = Commands.newSeek(consumerId, requestId, msgId.getLedgerId(), msgId.getEntryId(), new long[0]);
+                seek = Commands.newSeek(consumerId, requestId, msgId.getLedgerId(), msgId.getEntryId(), new long[0],
+                        CONSUMER_EPOCH.incrementAndGet(this));
             }
             return seekAsyncInternal(requestId, seek, messageId, seekBy);
         });

@@ -774,6 +774,7 @@ public class MultiTopicsConsumerImpl<T> extends ConsumerBase<T> {
     @Override
     public CompletableFuture<Void> seekAsync(Function<String, Object> function) {
         List<CompletableFuture<Void>> futures = new ArrayList<>(consumers.size());
+        CONSUMER_EPOCH.incrementAndGet(this);
         consumers.values().forEach(consumer -> futures.add(consumer.seekAsync(function)));
         unAckedMessageTracker.clear();
         incomingMessages.clear();
@@ -790,6 +791,7 @@ public class MultiTopicsConsumerImpl<T> extends ConsumerBase<T> {
             );
         }
         List<CompletableFuture<Void>> futures = new ArrayList<>(consumers.size());
+        CONSUMER_EPOCH.incrementAndGet(this);
         consumers.values().forEach(consumerImpl -> futures.add(consumerImpl.seekAsync(targetMessageId)));
 
         unAckedMessageTracker.clear();
@@ -801,6 +803,7 @@ public class MultiTopicsConsumerImpl<T> extends ConsumerBase<T> {
     @Override
     public CompletableFuture<Void> seekAsync(long timestamp) {
         List<CompletableFuture<Void>> futures = new ArrayList<>(consumers.size());
+        CONSUMER_EPOCH.incrementAndGet(this);
         consumers.values().forEach(consumer -> futures.add(consumer.seekAsync(timestamp)));
         return FutureUtil.waitForAll(futures);
     }

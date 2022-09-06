@@ -700,11 +700,15 @@ public class Commands {
     }
 
     public static ByteBuf newSeek(long consumerId, long requestId,
-                                  long ledgerId, long entryId, long[] ackSet) {
+                                  long ledgerId, long entryId, long[] ackSet, long consumerEpoch) {
         BaseCommand cmd = localCmd(Type.SEEK);
         CommandSeek seek = cmd.setSeek()
                 .setConsumerId(consumerId)
                 .setRequestId(requestId);
+        // consumerEpoch > -1 is useful
+        if (consumerEpoch > DEFAULT_CONSUMER_EPOCH) {
+            seek.setConsumerEpoch(consumerEpoch);
+        }
         MessageIdData messageId = seek.setMessageId()
             .setLedgerId(ledgerId)
             .setEntryId(entryId);
@@ -714,12 +718,16 @@ public class Commands {
         return serializeWithSize(cmd);
     }
 
-    public static ByteBuf newSeek(long consumerId, long requestId, long timestamp) {
+    public static ByteBuf newSeek(long consumerId, long requestId, long timestamp, long consumerEpoch) {
         BaseCommand cmd = localCmd(Type.SEEK);
-        cmd.setSeek()
+        CommandSeek seek = cmd.setSeek()
                 .setConsumerId(consumerId)
                 .setRequestId(requestId)
                 .setMessagePublishTime(timestamp);
+        // consumerEpoch > -1 is useful
+        if (consumerEpoch > DEFAULT_CONSUMER_EPOCH) {
+            seek.setConsumerEpoch(consumerEpoch);
+        }
         return serializeWithSize(cmd);
     }
 
