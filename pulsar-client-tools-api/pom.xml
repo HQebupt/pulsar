@@ -46,6 +46,8 @@
         <configuration>
           <!-- same version of Pulsar Admin API -->
           <release>${pulsar.client.compiler.release}</release>
+            <source>16</source>
+            <target>16</target>
         </configuration>
       </plugin>
       <plugin>

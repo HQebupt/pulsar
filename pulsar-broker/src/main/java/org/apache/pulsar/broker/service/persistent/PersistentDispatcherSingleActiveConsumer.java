@@ -493,6 +493,7 @@ public class PersistentDispatcherSingleActiveConsumer extends AbstractDispatcher
         executor.execute(() -> internalReadEntriesFailed(exception, ctx));
     }
 
+    //hq HighLevel消费:在Broker 读Entry异常的时候，会间隔15s重试
     private synchronized void internalReadEntriesFailed(ManagedLedgerException exception, Object ctx) {
         havePendingRead = false;
         ReadEntriesCtx readEntriesCtx = (ReadEntriesCtx) ctx;
@@ -504,7 +505,7 @@ public class PersistentDispatcherSingleActiveConsumer extends AbstractDispatcher
             // read operations in this case and just wait the existing read operation completes.
             return;
         }
-
+        //hq HighLevel消费:1、读Ledger异常，指数退避，间隔15s重试，最长重试时间1min
         long waitTimeMillis = readFailureBackoff.next();
 
         if (exception instanceof NoMoreEntriesToReadException) {
@@ -533,6 +534,7 @@ public class PersistentDispatcherSingleActiveConsumer extends AbstractDispatcher
         Objects.requireNonNull(c);
 
         // Reduce read batch size to avoid flooding bookies with retries
+        //hq HighLevel消费:2、读entry的数量降低到最小:1
         readBatchSize = serviceConfig.getDispatcherMinReadBatchSize();
 
         topic.getBrokerService().executor().schedule(() -> {
@@ -549,6 +551,7 @@ public class PersistentDispatcherSingleActiveConsumer extends AbstractDispatcher
                         if (currentConsumer != c) {
                             notifyActiveConsumerChanged(currentConsumer);
                         }
+                        //hq HighLevel消费: 3、重新读取Entry
                         readMoreEntries(currentConsumer);
                     } else {
                         log.info("[{}-{}] Skipping read retry: Current Consumer {}, havePendingRead {}", name, c,

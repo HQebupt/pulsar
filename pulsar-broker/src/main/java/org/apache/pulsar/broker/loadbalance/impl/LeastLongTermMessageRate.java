@@ -72,6 +72,7 @@ public class LeastLongTermMessageRate implements ModularLoadManagerStrategy {
         final TimeAverageBrokerData timeAverageData = brokerData.getTimeAverageData();
         final double timeAverageLongTermMessageRate = timeAverageData.getLongTermMsgRateIn()
                 + timeAverageData.getLongTermMsgRateOut();
+        //hq lb: 打分机制：选择出入口流量作为分数，最合理的是用负载
         final double totalMessageRateEstimate = totalMessageRate + timeAverageLongTermMessageRate;
 
         if (log.isDebugEnabled()) {

@@ -28,7 +28,24 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>java-test-image</artifactId>
   <name>Apache Pulsar :: Tests :: Docker Images :: Java Test Image</name>
-  <packaging>pom</packaging>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <basedir/>
+                    <buildDirectory/>
+                    <mainOutputDirectory/>
+                    <outputDirectory/>
+                    <projectArtifact/>
+                    <source>16</source>
+                    <target>16</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <packaging>pom</packaging>
 
   <profiles>
     <profile>

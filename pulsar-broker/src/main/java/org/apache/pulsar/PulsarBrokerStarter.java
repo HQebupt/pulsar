@@ -204,6 +204,7 @@ public class PulsarBrokerStarter {
             }
 
             // init pulsar service
+            // hq broker启动: 启动PulsarService，shutdown halt
             pulsarService = new PulsarService(brokerConfig,
                                               workerConfig,
                                               Optional.ofNullable(functionsWorkerService),

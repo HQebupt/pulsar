@@ -297,7 +297,7 @@ public class ServerCnx extends PulsarHandler implements TransportCnx {
     enum State {
         Start, Connected, Failed, Connecting
     }
-
+    //hq server 限流: 替代原有的反压机制
     private final ServerCnxThrottleTracker throttleTracker;
 
     public ServerCnx(PulsarService pulsar) {

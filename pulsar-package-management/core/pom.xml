@@ -58,6 +58,8 @@
                 <configuration>
                     <!-- This module is distributed with the Pulsar Admin Client -->
                     <release>${pulsar.client.compiler.release}</release>
+                    <source>16</source>
+                    <target>16</target>
                 </configuration>
             </plugin>
             <plugin>

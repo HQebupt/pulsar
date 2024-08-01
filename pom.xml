@@ -1720,6 +1720,8 @@ flexible messaging model and an intuitive client API.</description>
             <arg>-Xlint:-processing</arg>
             <arg>-Xpkginfo:always</arg>
           </compilerArgs>
+            <source>16</source>
+            <target>16</target>
         </configuration>
       </plugin>
       <plugin>

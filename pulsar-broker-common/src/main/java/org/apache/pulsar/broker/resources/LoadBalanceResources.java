@@ -31,6 +31,7 @@ import org.apache.pulsar.policies.data.loadbalancer.TimeAverageBrokerData;
 public class LoadBalanceResources {
     public static final String BUNDLE_DATA_BASE_PATH = "/loadbalance/bundle-data";
     public static final String BROKER_TIME_AVERAGE_BASE_PATH = "/loadbalance/broker-time-average";
+    //hq metadata: zk ResourceQuota存储默认资源配额的节点，这些配额用于负载均衡决策
     public static final String RESOURCE_QUOTA_BASE_PATH = "/loadbalance/resource-quota";
 
     private final BundleDataResources bundleDataResources;

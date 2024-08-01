@@ -280,7 +280,7 @@ public class BrokerService implements Closeable {
     protected volatile DispatchRateLimiter brokerDispatchRateLimiter = null;
 
     private DistributedIdGenerator producerNameGenerator;
-
+    //hq metadata:producerName 分布式id生成器
     public static final String PRODUCER_NAME_GENERATOR_PATH = "/counters/producer-name";
 
     private final BacklogQuotaManager backlogQuotaManager;

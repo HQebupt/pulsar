@@ -59,6 +59,7 @@ public class ThresholdShedder implements LoadSheddingStrategy {
     private static final double MB = 1024 * 1024;
     private final Map<String, Double> brokerAvgResourceUsage = new HashMap<>();
 
+    //hq lb: 寻找需要卸载的bundle
     @Override
     public synchronized Multimap<String, String> findBundlesForUnloading(final LoadData loadData,
                                                                          final ServiceConfiguration conf) {
@@ -151,6 +152,7 @@ public class ThresholdShedder implements LoadSheddingStrategy {
                 });
     }
 
+    //hq lb:集群平均复制的计算
     private double getBrokerAvgUsage(final LoadData loadData, final double historyPercentage,
                                      final ServiceConfiguration conf) {
         double totalUsage = 0.0;
@@ -166,6 +168,7 @@ public class ThresholdShedder implements LoadSheddingStrategy {
         return totalBrokers > 0 ? totalUsage / totalBrokers : 0;
     }
 
+    //hq lb: 单台Broker负载的计算
     private double updateAvgResourceUsage(String broker, LocalBrokerData localBrokerData,
                                           final double historyPercentage, final ServiceConfiguration conf) {
         Double historyUsage =

@@ -628,6 +628,7 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
     @Override
     public void publishMessage(ByteBuf headersAndPayload, PublishContext publishContext) {
         pendingWriteOps.incrementAndGet();
+        //hq 生产：生产消息时，会检查topic fence状态
         if (isFenced) {
             publishContext.completed(new TopicFencedException("fenced"), -1, -1);
             decrementPendingWriteOpsAndCheck();
@@ -783,6 +784,7 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
             close();
         } else {
             // fence topic when failed to write a message to BK
+            //hq 生产消息异常处理：broker写bk失败会fence topic，然后断连所有的客户端producer。这个保证broker脑裂的时候，仍然可以数据一致性。
             fence();
             // close all producers
             CompletableFuture<Void> disconnectProducersFuture;
@@ -1562,6 +1564,7 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
                                             unfenceTopicToResume();
                                             deleteFuture.completeExceptionally(e);
                                         } else {
+                                            //hq 删除topic: 删除topic会让ManagedLedger进入fence状态
                                             ledger.asyncDelete(new AsyncCallbacks.DeleteLedgerCallback() {
                                                 @Override
                                                 public void deleteLedgerComplete(Object ctx) {

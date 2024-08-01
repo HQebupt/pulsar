@@ -908,6 +908,7 @@ public class ModularLoadManagerImpl implements ModularLoadManager {
 
             // distribute bundles evenly to candidate-brokers if enable
             // or system-namespace bundles
+            //hq lb: 保障bundle分配是绝对平均的，这会导致过滤掉bundle数比较多的broker
             if (conf.isLoadBalancerDistributeBundlesEvenlyEnabled()
                     || serviceUnit.getNamespaceObject().equals(NamespaceName.SYSTEM_NAMESPACE)) {
                 LoadManagerShared.removeMostServicingBrokersForNamespace(bundle,
@@ -941,6 +942,7 @@ public class ModularLoadManagerImpl implements ModularLoadManager {
             }
 
             // Choose a broker among the potentially smaller filtered list, when possible
+            //hq lb: 根据设置的placement策略，打分机制，默认是LeastResourceUsageWithWeight.
             Optional<String> broker = placementStrategy.selectBroker(brokerCandidateCache, data, loadData, conf);
             if (log.isDebugEnabled()) {
                 log.debug("Selected broker {} from candidate brokers {}", broker, brokerCandidateCache);
